@@ -8,7 +8,7 @@ app = Flask(__name__)
 # -----------------------
 # Database Connection
 # -----------------------
-DATABASE_URL = os.environ.get("DATABASE_URL")  # Set this in Render Environment
+DATABASE_URL = ("postgresql://redundancy_db_user:qgU9GcLuHfMsrelemBiBKzA0G3Qmdttt@dpg-d643kea4d50c73e4daug-a.oregon-postgres.render.com/redundancy_db")  # Set this in Render Environment
 if not DATABASE_URL:
     raise Exception("DATABASE_URL environment variable not set!")
 
