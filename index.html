@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Data Redundancy Removal System</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; }
+        input, button { padding: 8px; margin: 5px 0; width: 300px; }
+        table { border-collapse: collapse; margin-top: 20px; width: 80%; }
+        th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+        th { background-color: #f2f2f2; }
+    </style>
+</head>
+<body>
+    <h2>Add User</h2>
+    <input type="text" id="name" placeholder="Name"><br>
+    <input type="email" id="email" placeholder="Email"><br>
+    <input type="text" id="phone" placeholder="Phone"><br>
+    <button onclick="addUser()">Add User</button>
+    <p id="message"></p>
+
+    <h2>All Users</h2>
+    <button onclick="loadUsers()">Refresh Users</button>
+    <table id="usersTable">
+        <tr>
+            <th>ID</th><th>Name</th><th>Email</th><th>Phone</th><th>Created At</th>
+        </tr>
+    </table>
+
+    <script>
+        const API_URL = "https://your-app-name.onrender.com"; // Replace with your Render app URL
+
+        async function addUser() {
+            const name = document.getElementById("name").value;
+            const email = document.getElementById("email").value;
+            const phone = document.getElementById("phone").value;
+
+            const response = await fetch(`${API_URL}/add_user`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ name, email, phone })
+            });
+
+            const result = await response.json();
+            document.getElementById("message").innerText = result.message;
+
+            loadUsers(); // refresh table
+        }
+
+        async function loadUsers() {
+            const response = await fetch(`${API_URL}/all_users`);
+            const data = await response.json();
+
+            const table = document.getElementById("usersTable");
+            table.innerHTML = "<tr><th>ID</th><th>Name</th><th>Email</th><th>Phone</th><th>Created At</th></tr>";
+
+            data.users.forEach(user => {
+                const row = table.insertRow();
+                row.insertCell(0).innerText = user.id;
+                row.insertCell(1).innerText = user.name;
+                row.insertCell(2).innerText = user.email;
+                row.insertCell(3).innerText = user.phone;
+                row.insertCell(4).innerText = user.created_at;
+            });
+        }
+
+        // Load users when page opens
+        loadUsers();
+    </script>
+</body>
+</html>
