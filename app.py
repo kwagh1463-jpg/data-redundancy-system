@@ -5,46 +5,23 @@ import os
 
 app = Flask(__name__)
 
-# Get database URL from environment variable
 DATABASE_URL = os.environ.get("DATABASE_URL")
 
-# Connect to database
 conn = psycopg2.connect(DATABASE_URL)
 cur = conn.cursor()
 
-# Function to generate hash
-def generate_hash(name, email, phone):
-    data_string = name.lower().strip() + email.lower().strip() + phone.strip()
-    return hashlib.sha256(data_string.encode()).hexdigest()
+# 🔹 Create table automatically
+def create_table():
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS users (
+            id SERIAL PRIMARY KEY,
+            name VARCHAR(100) NOT NULL,
+            email VARCHAR(100) UNIQUE NOT NULL,
+            phone VARCHAR(15) NOT NULL,
+            data_hash TEXT UNIQUE NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+    """)
+    conn.commit()
 
-# Home route
-@app.route("/")
-def home():
-    return "Data Redundancy Removal System Running Successfully"
-
-# Add user route
-@app.route("/add_user", methods=["POST"])
-def add_user():
-    name = request.json.get("name")
-    email = request.json.get("email")
-    phone = request.json.get("phone")
-
-    # Basic validation
-    if not name or not email or not phone:
-        return jsonify({"message": "Invalid Input"}), 400
-
-    data_hash = generate_hash(name, email, phone)
-
-    try:
-        cur.execute(
-            "INSERT INTO users (name, email, phone, data_hash) VALUES (%s,%s,%s,%s)",
-            (name, email, phone, data_hash)
-        )
-        conn.commit()
-        return jsonify({"message": "Unique Data Added Successfully"})
-    except Exception as e:
-        conn.rollback()
-        return jsonify({"message": "Duplicate or Redundant Data Found"}), 409
-
-if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=10000)
+create_table()   # 👈 This runs when app starts
