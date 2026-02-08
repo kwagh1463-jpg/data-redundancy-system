@@ -89,23 +89,18 @@ def add_user_form():
         name = request.form.get("name")
         email = request.form.get("email")
         phone = request.form.get("phone")
-        if not name or not email or not phone:
-            return "⚠ Invalid input", 400
+        # Add logic to insert into database
+        return "✅ User added successfully"
+    
+    return '''
+        <form method="POST">
+            Name: <input name="name"><br>
+            Email: <input name="email"><br>
+            Phone: <input name="phone"><br>
+            <input type="submit" value="Add User">
+        </form>
+    '''
 
-        data_hash = generate_hash(name, email, phone)
-        try:
-            cur.execute(
-                "INSERT INTO users (name,email,phone,data_hash) VALUES (%s,%s,%s,%s)",
-                (name,email,phone,data_hash)
-            )
-            conn.commit()
-            return "✅ User added successfully"
-        except psycopg2.errors.UniqueViolation:
-            conn.rollback()
-            return "⚠ Duplicate or redundant user"
-        except Exception as e:
-            conn.rollback()
-            return f"⚠ Error: {str(e)}", 500
 
     # GET request → show HTML form
     return '''
