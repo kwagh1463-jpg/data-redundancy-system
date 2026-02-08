@@ -8,7 +8,7 @@ app = Flask(__name__)
 # -----------------------
 # Database Connection
 # -----------------------
-DATABASE_URL = ("postgresql://redundancy_db_user:qgU9GcLuHfMsrelemBiBKzA0G3Qmdttt@dpg-d643kea4d50c73e4daug-a.oregon-postgres.render.com/redundancy_db")  # Set this in Render Environment
+DATABASE_URL = os.environ.get("DATABASE_URL")
 if not DATABASE_URL:
     raise Exception("DATABASE_URL environment variable not set!")
 
@@ -49,16 +49,18 @@ def home():
     return "✅ Data Redundancy Removal System is Running!"
 
 # -----------------------
-# Add User Route (POST)
+# Add User Route (POST JSON)
 # -----------------------
 @app.route("/add_user", methods=["POST"])
 def add_user():
     data = request.get_json()
+    if not data:
+        return jsonify({"message": "Missing JSON data"}), 400
+
     name = data.get("name")
     email = data.get("email")
     phone = data.get("phone")
 
-    # Basic validation
     if not name or not email or not phone:
         return jsonify({"message": "Invalid input"}), 400
 
@@ -66,7 +68,7 @@ def add_user():
 
     try:
         cur.execute(
-            "INSERT INTO users (name, email, phone, data_hash) VALUES (%s,%s,%s,%s)",
+            "INSERT INTO users (name,email,phone,data_hash) VALUES (%s,%s,%s,%s)",
             (name, email, phone, data_hash)
         )
         conn.commit()
@@ -79,7 +81,45 @@ def add_user():
         return jsonify({"message": f"Error: {str(e)}"}), 500
 
 # -----------------------
-# View All Users Route (GET)
+# Add User Form (Browser-friendly)
+# -----------------------
+@app.route("/add_user_form", methods=["GET", "POST"])
+def add_user_form():
+    if request.method == "POST":
+        name = request.form.get("name")
+        email = request.form.get("email")
+        phone = request.form.get("phone")
+        if not name or not email or not phone:
+            return "⚠ Invalid input", 400
+
+        data_hash = generate_hash(name, email, phone)
+        try:
+            cur.execute(
+                "INSERT INTO users (name,email,phone,data_hash) VALUES (%s,%s,%s,%s)",
+                (name,email,phone,data_hash)
+            )
+            conn.commit()
+            return "✅ User added successfully"
+        except psycopg2.errors.UniqueViolation:
+            conn.rollback()
+            return "⚠ Duplicate or redundant user"
+        except Exception as e:
+            conn.rollback()
+            return f"⚠ Error: {str(e)}", 500
+
+    # GET request → show HTML form
+    return '''
+        <h2>Add User (Browser Form)</h2>
+        <form method="POST">
+            Name: <input name="name"><br><br>
+            Email: <input name="email"><br><br>
+            Phone: <input name="phone"><br><br>
+            <input type="submit" value="Add User">
+        </form>
+    '''
+
+# -----------------------
+# View All Users Route (GET JSON)
 # -----------------------
 @app.route("/all_users", methods=["GET"])
 def all_users():
